@@ -1,14 +1,16 @@
 #!/usr/bin/env python
 
 import fileinput
-from defs import parse_attributes, sites
+from defs import build_collection, parse_attributes, sites
 
 import urllib2
 
-url = 'http://www.daft.ie/dublin/houses-for-rent/rathfarnham/white-church-abbey-rathfarnham-dublin-1637147/'
-response = urllib2.urlopen(url)
-data = ''.join(response.readlines())
+collection = []
+with open('saved.htm') as fd:
+    collection = build_collection(sites['daft.ie']['collection'],
+                                  ''.join(fd.readlines()))
 
-attrs = parse_attributes(data, sites['daft.ie']['attributes'])
-
-print(attrs)
+for prop in collection:
+    response = urllib2.urlopen(prop)
+    data = ''.join(response.readlines())
+    print parse_attributes(data, sites['daft.ie']['attributes'])
