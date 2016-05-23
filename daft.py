@@ -6,6 +6,10 @@ import time
 import random
 import re
 
+from collections import namedtuple
+
+property_attrs = namedtuple('Property', ['price', 'address', 'rooms', 'furnished'])
+
 daft_rental_url = 'http://www.daft.ie/dublin-city/houses-for-rent/south-dublin-city/'
 
 def get_list_of_properties():
@@ -29,11 +33,10 @@ def get_list_of_properties():
 
 def get_price_from_property(property):
     'property parameter is a soup'
-    import pdb; pdb.set_trace()
     text_price = property.select('#smi-price-string')[0].text.replace(',', '')
     match = re.search('(\d{3,4})', text_price)
     if match:
-        return match.group(1)
+        return int(match.group(1))
 
 
 def get_address_from_property(property):
@@ -48,8 +51,14 @@ def get_number_of_rooms_from_property(property):
     'property parameter is a soup'
     attrs = get_overview_attributes(property)
     if 'bedrooms' in attrs:
-        return attrs['bedrooms']
+        return int(attrs['bedrooms'])
     return -1
+
+def get_is_furnished_from_property(property):
+    attrs = get_overview_attributes(property)
+    if 'furnished' in attrs:
+        return attrs['furnished']
+    return False
 
 def get_bedrooms_from_overview(overview):
     match = re.search('(^\d+)', overview)
@@ -68,8 +77,10 @@ def get_overview_attributes(property):
 def get_property_attributes(property_url):
     page = urllib2.urlopen(property_url)
     soup = bs(''.join(page.readlines()), 'html.parser')
-    return (get_price_from_property(soup), get_address_from_property(soup),
-            get_number_of_rooms_from_property(soup))
+    return property_attrs(get_price_from_property(soup),
+                          get_address_from_property(soup),
+                          get_number_of_rooms_from_property(soup),
+                          get_is_furnished_from_property(soup))
 
 if __name__ == '__main__':
     properties = get_list_of_properties()
