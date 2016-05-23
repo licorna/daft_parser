@@ -5,10 +5,12 @@ import urllib2
 import time
 import random
 import re
+from maps import from_office
 
 from collections import namedtuple
 
-property_attrs = namedtuple('Property', ['price', 'address', 'rooms', 'furnished'])
+property_attrs = namedtuple('Property', ['shortcode', 'price', 'address',
+                                         'rooms', 'furnished', 'd_from_office'])
 
 daft_rental_url = 'http://www.daft.ie/dublin-city/houses-for-rent/south-dublin-city/'
 
@@ -39,6 +41,10 @@ def get_price_from_property(property):
         return int(match.group(1))
 
 
+def get_distance_from_office(address):
+    return from_office(address)
+
+
 def get_address_from_property(property):
     'property parameter is a soup'
     for address in property.select('.map_info_box'):
@@ -53,6 +59,11 @@ def get_number_of_rooms_from_property(property):
     if 'bedrooms' in attrs:
         return int(attrs['bedrooms'])
     return -1
+
+
+def get_shortcode(property):
+    return property.select('.description_extras a[href^="http://www.daft.ie/"]')[0]['href']
+
 
 def get_is_furnished_from_property(property):
     attrs = get_overview_attributes(property)
@@ -77,10 +88,13 @@ def get_overview_attributes(property):
 def get_property_attributes(property_url):
     page = urllib2.urlopen(property_url)
     soup = bs(''.join(page.readlines()), 'html.parser')
-    return property_attrs(get_price_from_property(soup),
-                          get_address_from_property(soup),
+    address = get_address_from_property(soup)
+    return property_attrs(get_shortcode(soup),
+                          get_price_from_property(soup),
+                          address,
                           get_number_of_rooms_from_property(soup),
-                          get_is_furnished_from_property(soup))
+                          get_is_furnished_from_property(soup),
+                          get_distance_from_office(address))
 
 if __name__ == '__main__':
     properties = get_list_of_properties()
